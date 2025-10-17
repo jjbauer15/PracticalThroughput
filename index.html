@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DDMRP Buffer Calculator — Access</title>
+  <meta name="description" content="Access the free DDMRP Buffer Calculator. Enter your info to continue." />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200">
+    <div class="mx-auto max-w-4xl px-4 py-6 flex items-center justify-between">
+      <h1 class="text-2xl font-semibold">DDMRP Buffer Calculator</h1>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-4xl px-4 py-6 grid gap-6">
+    <!-- Intro -->
+    <section class="bg-white rounded-2xl border border-gray-200 p-5">
+      <p class="text-gray-700 leading-relaxed">
+        Get instant access to the <span class="font-medium">DDMRP Buffer Calculator</span>.  
+        This tool runs entirely in your browser—your entries never leave your device.  
+        Enter your details below to continue.
+      </p>
+    </section>
+
+    <!-- Form -->
+    <section class="bg-white rounded-2xl border border-gray-200 p-5">
+      <h2 class="text-lg font-semibold mb-4">Access Form</h2>
+
+      <form id="gateForm" class="grid gap-4" novalidate>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="text-sm text-gray-600">Name<span class="text-rose-600">*</span></span>
+            <input id="name" name="name" class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Jane Doe" required />
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-gray-600">Work Email<span class="text-rose-600">*</span></span>
+            <input id="email" name="email" type="email" class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="jane@company.com" required />
+          </label>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="text-sm text-gray-600">Company</span>
+            <input id="company" name="company" class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Acme Manufacturing" />
+          </label>
+
+          <label class="block">
+            <span class="text-sm text-gray-600">Role</span>
+            <input id="role" name="role" class="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Director of Operations" />
+          </label>
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-gray-600">
+          <input type="checkbox" id="optin" name="optin" value="yes" class="h-4 w-4 rounded border-gray-300" />
+          Also subscribe me to Practical Throughput on Substack
+        </label>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button id="submitBtn" type="submit" class="rounded-xl bg-gray-900 text-white px-4 py-2 font-medium hover:bg-black focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            Get Access
+          </button>
+          <span class="text-sm text-gray-500">You’ll be redirected to the tool.</span>
+        </div>
+
+        <div id="formError" class="text-sm text-rose-600 hidden">Please fill out your name and email.</div>
+      </form>
+    </section>
+
+    <!-- Privacy -->
+    <section class="bg-white rounded-2xl border border-gray-200 p-5">
+      <p class="text-sm text-gray-600">
+        <strong>Privacy:</strong> No data is stored. This form is only for gating purposes.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('gateForm');
+    const err = document.getElementById('formError');
+
+    function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      err.classList.add('hidden');
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      if (!name || !validEmail(email)) {
+        err.classList.remove('hidden');
+        return;
+      }
+      // redirect to tool
+      window.location.href = "tool.html";
+    });
+  </script>
+</body>
+</html>
