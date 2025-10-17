@@ -26,6 +26,9 @@
       font-size: 0.9em;
       color: #4b5563;
     }
+    .chev { transition: transform .15s ease; }
+    .chev.open { transform: rotate(90deg); }
+    .calc-line { font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
@@ -156,9 +159,29 @@
   <div id="tt" class="tooltip"></div>
 
   <script>
+    // ---------- Helpers ----------
     const fmt = (n) => (n==null || isNaN(n)) ? '—' : Math.round(n).toLocaleString();
     const el  = (id) => document.getElementById(id);
     const INPUT_IDS = ['adu','dlt','varFactor','moq','orderCycle'];
+
+    // Show precise values in math without messy trailing zeros
+    const f2 = (n) => {
+      if(n==null || isNaN(n)) return '—';
+      const s = (+n).toFixed(2);
+      return s.replace(/\.00$/,'').replace(/(\.\d*[1-9])0$/,'$1');
+    };
+    const multLine = (lhs, terms, result) => {
+      const parts = terms.map(f2).join(' × ');
+      return `<div class="calc-line">${lhs} = ${parts} = <span class="font-medium">${f2(result)}</span></div>`;
+    };
+    const addLine = (lhs, terms, result) => {
+      const parts = terms.map(f2).join(' + ');
+      return `<div class="calc-line">${lhs} = ${parts} = <span class="font-medium">${f2(result)}</span></div>`;
+    };
+    const maxLine = (lhs, options, chosen) => {
+      const parts = options.map(o => f2(o)).join(', ');
+      return `<div class="calc-line">${lhs} = max(${parts}) = <span class="font-medium">${f2(chosen)}</span></div>`;
+    };
 
     function setVar(v){ const vf=el('varFactor'); if(vf){vf.value=v; renderResults(calculate());}}
 
@@ -187,6 +210,7 @@
 
       const ltf = leadTimeFactor(dlt);
       const yellow = adu * dlt;
+
       const redBase = adu * dlt * (ltf ?? 0);
       const redSafety = redBase * varFactor;
       const red = redBase + redSafety;
@@ -207,7 +231,56 @@
       const topYellow = red + yellow;
       const topGreen = red + yellow + green;
 
-      return {adu,dlt,varFactor,moq,orderCycle,ltf,yellow,redBase,redSafety,red,greenBase,green,moqBinding,ocBinding,orderFloor,topRed,topYellow,topGreen};
+      return {
+        adu,dlt,varFactor,moq,orderCycle,ltf,
+        yellow,redBase,redSafety,red,
+        greenBase,green,moqBinding,ocBinding,orderFloor,
+        topRed,topYellow,topGreen
+      };
+    }
+
+    // Build the expandable details content for each card
+    function buildDetails(res){
+      const { adu, dlt, ltf, varFactor, moq, orderCycle,
+              yellow, redBase, redSafety, red,
+              greenBase, green, moqBinding, ocBinding, orderFloor,
+              topRed, topYellow, topGreen } = res;
+
+      // YELLOW math
+      const yellowMath = [
+        multLine('Yellow', [adu, dlt], yellow),
+        addLine('Top of Yellow', [red, yellow], topYellow)
+      ].join('');
+
+      // RED math
+      const redMath = [
+        multLine('Red Base', [adu, dlt, ltf??0], redBase),
+        multLine('Red Safety', [redBase, varFactor], redSafety),
+        addLine('Red', [redBase, redSafety], red),
+        `<div class="calc-line">Top of Red = Red = <span class="font-medium">${f2(topRed)}</span></div>`
+      ].join('');
+
+      // GREEN math + binding narrative
+      const greenPieces = [];
+      greenPieces.push(multLine('Green Base', [adu, dlt, ltf??0], greenBase));
+      const options = [greenBase];
+      if(moq!=null && moq>0) options.push(moq);
+      if(orderCycle!=null && orderCycle>0) options.push(orderFloor);
+
+      if(options.length>1){
+        greenPieces.push(maxLine('Green', options, green));
+        if(moqBinding){
+          greenPieces.push(`<div class="text-xs text-amber-700 mt-1">Bound by MOQ (${f2(moq)}).</div>`);
+        }else if(ocBinding){
+          greenPieces.push(`<div class="text-xs text-amber-700 mt-1">Bound by Order Frequency (ADU × ${f2(orderCycle)} = ${f2(orderFloor)}).</div>`);
+        }
+      }else{
+        greenPieces.push(`<div class="calc-line">Green = <span class="font-medium">${f2(green)}</span></div>`);
+      }
+      greenPieces.push(addLine('Top of Green', [red, yellow, green], topGreen));
+      const greenMath = greenPieces.join('');
+
+      return { yellowMath, redMath, greenMath };
     }
 
     function renderResults(res){
@@ -222,20 +295,71 @@
       if(res.moqBinding) greenSub = `Green floored by MOQ ${fmt(res.moq)} (Base = ${fmt(res.greenBase)})`;
       else if(res.ocBinding) greenSub = `Green floored by Order Freq ${fmt(res.orderFloor)} (ADU × ${res.orderCycle})`;
 
+      const { greenMath, yellowMath, redMath } = buildDetails(res);
+
       const cards=[
-        {label:'Top of Green (Replenishment Target)', value:res.topGreen, sub:greenSub},
-        {label:'Top of Yellow (Replenishment Trigger)', value:res.topYellow},
-        {label:'Top of Red (Safety Stock)', value:res.topRed, sub:`Red = Red Base ${fmt(res.redBase)} + Red Safety ${fmt(res.redSafety)}`}
+        {
+          id:'card-green',
+          label:'Top of Green (Replenishment Target)',
+          value:res.topGreen,
+          sub:greenSub,
+          detailsHtml: greenMath,
+          accent:'text-green-600'
+        },
+        {
+          id:'card-yellow',
+          label:'Top of Yellow (Replenishment Trigger)',
+          value:res.topYellow,
+          detailsHtml: yellowMath,
+          accent:'text-yellow-600'
+        },
+        {
+          id:'card-red',
+          label:'Top of Red (Safety Stock)',
+          value:res.topRed,
+          sub:`Red = Red Base ${fmt(res.redBase)} + Red Safety ${fmt(res.redSafety)}`,
+          detailsHtml: redMath,
+          accent:'text-red-600'
+        }
       ];
 
       cards.forEach(c=>{
         const card=document.createElement('div');
         card.className='rounded-xl border border-gray-200 p-4';
-        card.innerHTML=`<div class='text-sm text-gray-500'>${c.label}</div>
-          <div class='mt-1 text-2xl font-semibold'>${fmt(c.value)}</div>
-          ${c.sub?`<div class='mt-1 text-xs ${res.moqBinding||res.ocBinding?'text-amber-700':'text-gray-500'}'>${c.sub}</div>`:''}`;
+        card.innerHTML=`
+          <div class='flex items-start justify-between gap-3'>
+            <div>
+              <div class='text-sm text-gray-500'>${c.label}</div>
+              <div class='mt-1 text-2xl font-semibold ${c.accent??''}'>${fmt(c.value)}</div>
+              ${c.sub?`<div class='mt-1 text-xs ${res.moqBinding||res.ocBinding?'text-amber-700':'text-gray-500'}'>${c.sub}</div>`:''}
+            </div>
+            <button class="mt-1 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+                    data-toggle="${c.id}">
+              <svg class="chev h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span>Show math</span>
+            </button>
+          </div>
+          <div id="${c.id}" class="mt-3 hidden rounded-lg bg-gray-50 border border-gray-200 p-3 text-sm leading-6 space-y-1">
+            ${c.detailsHtml}
+          </div>`;
         container.appendChild(card);
       });
+
+      // wire up toggles
+      container.querySelectorAll('[data-toggle]').forEach(btn=>{
+        const targetId = btn.getAttribute('data-toggle');
+        const target = el(targetId);
+        const icon = btn.querySelector('.chev');
+        const label = btn.querySelector('span');
+        btn.addEventListener('click', ()=>{
+          const open = target.classList.toggle('hidden') === false;
+          if(open){ icon.classList.add('open'); label.textContent='Hide math'; }
+          else { icon.classList.remove('open'); label.textContent='Show math'; }
+        });
+      });
+
       renderViz(res);
     }
 
@@ -273,17 +397,18 @@
       attach({id:'seg-green',  label:'Green',  value:green});
     }
 
+    // Reset & live update
     el('resetBtn').addEventListener('click',()=>{
       ['adu','dlt','varFactor','moq','orderCycle'].forEach(id=>el(id).value='');
       el('results').innerHTML=''; el('viz').innerHTML='';
       el('ltFactorDisplay').textContent='—';
     });
-
     ['adu','dlt','varFactor','moq','orderCycle'].forEach(id=>{
       const node=el(id);
       if(node) node.addEventListener('input',()=>renderResults(calculate()));
     });
 
+    // Initial render
     renderResults(calculate());
   </script>
 </body>
