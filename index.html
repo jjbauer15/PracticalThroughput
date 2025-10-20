@@ -39,6 +39,7 @@
   </header>
 
   <main class="mx-auto max-w-4xl px-4 py-6 grid gap-6">
+    <!-- Intro -->
     <section class="bg-white rounded-2xl border border-gray-200 p-5">
       <p class="text-gray-700 leading-relaxed">
         Enter a few inputs to instantly calculate <span class="font-medium">Red / Yellow / Green</span> buffer zones. This tool runs entirely in your browser; 
@@ -46,6 +47,7 @@
       </p>
     </section>
 
+    <!-- Inputs -->
     <section class="bg-white rounded-2xl border border-gray-200 p-5">
       <h2 class="text-lg font-semibold mb-4">Inputs</h2>
 
@@ -115,36 +117,12 @@
         </div>
       </details>
 
-      <details class="mt-4 rounded-2xl border border-gray-200 p-3 open:bg-gray-50">
-        <summary class="cursor-pointer font-medium">Formula notes</summary>
-        <ul class="mt-2 list-none pl-0 text-sm text-gray-700 space-y-2">
-
-          <!-- GREEN -->
-          <li><strong class="text-green-600">Green (Replenishment Zone)</strong></li>
-          <li class="subformula">Green Base = ADU × Lead Time × Lead Time Factor</li>
-          <li class="subformula">Green = max(Green Base, MOQ (if any), ADU × Order Frequency (if any))</li>
-          <li class="subformula">Top of Green (Replenishment Target) = Red + Yellow + Green</li>
-
-          <!-- YELLOW -->
-          <li class="mt-2"><strong class="text-yellow-600">Yellow (Demand Zone)</strong></li>
-          <li class="subformula">Yellow = ADU × Lead Time</li>
-          <li class="subformula">Top of Yellow (Replenishment Trigger) = Red + Yellow</li>
-
-          <!-- RED -->
-          <li class="mt-2"><strong class="text-red-600">Red (Safety Zone)</strong></li>
-          <li class="subformula">Total Red (Safety Zone) = Red Base + Red Safety</li>
-          <li class="subformula">Red Base = ADU × Lead Time × Lead Time Factor</li>
-          <li class="subformula">Red Safety = Red Base × Variability Factor</li>
-          <li class="subformula">Top of Red (Safety Stock) = Red</li>
-
-        </ul>
-      </details>
-
       <div class="mt-5">
         <button id="resetBtn" class="rounded-xl bg-gray-100 px-4 py-2 font-medium text-gray-800 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">Reset</button>
       </div>
     </section>
 
+    <!-- Results -->
     <section class="bg-white rounded-2xl border border-gray-200 p-5">
       <h2 class="text-lg font-semibold mb-4">Results</h2>
       <div class="grid gap-6 md:grid-cols-2 items-start">
@@ -152,6 +130,30 @@
         <div class="flex justify-center"><div id="viz"></div></div>
       </div>
     </section>
+
+    <!-- Formula Notes (moved below Results) -->
+    <details class="mt-1 rounded-2xl border border-gray-200 p-3 open:bg-gray-50">
+      <summary class="cursor-pointer font-medium">Formula notes</summary>
+      <ul class="mt-2 list-none pl-0 text-sm text-gray-700 space-y-2">
+        <!-- GREEN -->
+        <li><strong class="text-green-600">Green (Replenishment Zone)</strong></li>
+        <li class="subformula">Green Base = ADU × Lead Time × Lead Time Factor</li>
+        <li class="subformula">Green = max(Green Base, MOQ (if any), ADU × Order Frequency (if any))</li>
+        <li class="subformula">Top of Green (Replenishment Target) = Red + Yellow + Green</li>
+
+        <!-- YELLOW -->
+        <li class="mt-2"><strong class="text-yellow-600">Yellow (Demand Zone)</strong></li>
+        <li class="subformula">Yellow = ADU × Lead Time</li>
+        <li class="subformula">Top of Yellow (Replenishment Trigger) = Red + Yellow</li>
+
+        <!-- RED -->
+        <li class="mt-2"><strong class="text-red-600">Red (Safety Zone)</strong></li>
+        <li class="subformula">Total Red (Safety Zone) = Red Base + Red Safety</li>
+        <li class="subformula">Red Base = ADU × Lead Time × Lead Time Factor</li>
+        <li class="subformula">Red Safety = Red Base × Variability Factor</li>
+        <li class="subformula">Top of Red (Safety Stock) = Red</li>
+      </ul>
+    </details>
   </main>
 
   <div id="tt" class="tooltip"></div>
@@ -411,4 +413,3 @@
   </script>
 </body>
 </html>
-
