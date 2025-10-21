@@ -122,8 +122,7 @@
                 <div id="nfValue" class="mt-1 text-2xl font-semibold text-gray-900">—</div>
                 <div id="nfDetail" class="mt-1 text-xs text-gray-700"></div>
               </div>
-              <!-- NEW: Advisor box directly under Net Flow -->
-              <div id="nfMessage" class="mt-3 rounded-xl border border-gray-200 p-3 text-sm bg-gray-50 text-gray-800"></div>
+              <div id="nfMessage" class="mt-3 rounded-xl border border-gray-200 p-3 text-sm bg-gray-50 text-gray-800" style="display:none"></div>
             </div>
           </div>
         </div>
@@ -156,6 +155,13 @@
 
     function calc(){
       const v = {}; INPUTS.forEach(i => v[i] = parseFloat(el(i).value));
+
+      // Detect whether the user actually typed anything into Current Supply
+      const onOrderStr   = el('onOrder').value ?? '';
+      const onHandStr    = el('onHand').value ?? '';
+      const committedStr = el('committed').value ?? '';
+      const hasSupplyInputs = [onOrderStr, onHandStr, committedStr].some(s => String(s).trim() !== '');
+
       const adu        = Number.isFinite(v.adu) ? v.adu : 0;
       const dlt        = Number.isFinite(v.dlt) ? v.dlt : 0;
       const varFactor  = Number.isFinite(v.varFactor) ? v.varFactor : 0;
@@ -196,7 +202,8 @@
         redBase,redSafety,red,
         greenBase, green, greenMoq, greenCycle, greenBound, moqBinding, ocBinding,
         topRed,topYellow,topGreen,
-        onOrder,onHand,committed,netFlow
+        onOrder,onHand,committed,netFlow,
+        hasSupplyInputs
       };
     }
 
@@ -209,7 +216,7 @@
         el('nfValue').textContent = '—';
         el('nfDetail').textContent = '';
         el('nfCard').style.background = '#f3f4f6';
-        el('nfMessage').innerHTML = '';
+        const box = el('nfMessage'); box.innerHTML = ''; box.style.display = 'none';
         return;
       }
       el('ltFactorDisplay').textContent = res.ltf.toFixed(2);
@@ -357,37 +364,54 @@
         </div>`;
     }
 
-    // NEW: Advisory logic under Net Flow
-    function renderAdvisor({netFlow, topRed, topYellow, topGreen, adu}){
+    // Advisory logic under Net Flow
+    function renderAdvisor({netFlow, topRed, topYellow, topGreen, adu, hasSupplyInputs}){
       const box = el('nfMessage');
-      if (!adu || !Number.isFinite(netFlow)) { box.innerHTML = ''; return; }
+
+      // Hide if no Current Supply values were entered
+      if (!hasSupplyInputs) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+      }
+
+      // Make sure the box is visible if we have supply inputs
+      box.style.display = 'block';
+
+      if (!adu || !Number.isFinite(netFlow)) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+      }
 
       let html = '', tone = '', bg = '';
 
       if (netFlow > topGreen) {
         // BLUE: overstocked; days until next reorder = (NF - topYellow) / ADU
         const days = Math.ceil((netFlow - topYellow) / adu);
+        const dayLabel = days === 1 ? 'day' : 'days';
         tone = 'text-blue-800'; bg = 'bg-blue-50/60 border-blue-200';
         html = `<div class="font-semibold ${tone}">Overstocked</div>
-                <div class="mt-1">Estimated <span class="font-medium">${num(days)}</span> days until next reorder.<br>(Net Flow − Top of Yellow) ÷ ADU )</div>`;
+                <div class="mt-1">Estimated <span class="font-medium">${num(days)}</span> ${dayLabel} until next reorder.<br>(Net Flow − Top of Yellow) ÷ ADU</div>`;
       } else if (netFlow > topYellow) {
-        // GREEN: properly stocked; days until next reorder = (topYellow - NF) / ADU
+        // GREEN: properly stocked; days until next reorder = (NF - topYellow) / ADU
         const days = Math.ceil((netFlow - topYellow) / adu);
+        const dayLabel = days === 1 ? 'day' : 'days';
         tone = 'text-green-800'; bg = 'bg-green-50/60 border-green-200';
         html = `<div class="font-semibold ${tone}">Properly stocked</div>
-                <div class="mt-1">Estimated <span class="font-medium">${num(days)}</span> days until next reorder.<br>(Net Flow − Top of Yellow) ÷ ADU )</div>`;
+                <div class="mt-1">Estimated <span class="font-medium">${num(days)}</span> ${dayLabel} until next reorder.<br>(Net Flow − Top of Yellow) ÷ ADU</div>`;
       } else if (netFlow > topRed) {
         // YELLOW: need another PO; amount = topGreen - netFlow
         const po = Math.max(0, topGreen - netFlow);
         tone = 'text-yellow-900'; bg = 'bg-yellow-50/60 border-yellow-200';
         html = `<div class="font-semibold ${tone}">Understocked</div>
-                <div class="mt-1">PO amount: <span class="font-medium">${fmt(po)}</span><br>Top of Green − Net Flow.</div>`;
+                <div class="mt-1">PO amount: <span class="font-medium">${fmt(po)}</span><br>Top of Green − Net Flow</div>`;
       } else {
         // RED: very high priority; amount = topGreen - netFlow; stockout risk
         const po = Math.max(0, topGreen - netFlow);
         tone = 'text-red-900'; bg = 'bg-red-50/60 border-red-200';
         html = `<div class="font-semibold ${tone}">Very high priority</div>
-                <div class="mt-1">Place a PO for <span class="font-medium">${fmt(po)}</span><br>(Top of Green − Net Flow) <span class="font-medium"><br>Stockout risk</span> until replenished.</div>`;
+                <div class="mt-1">Place a PO for <span class="font-medium">${fmt(po)}</span><br>(Top of Green − Net Flow) <span class="font-medium"><br>Stockout risk</span> until replenished</div>`;
       }
 
       box.className = `mt-3 rounded-xl border p-3 text-sm ${bg}`;
@@ -404,6 +428,7 @@
       el('nfDetail').textContent = '';
       el('ltFactorDisplay').textContent = '—';
       el('nfMessage').innerHTML = '';
+      el('nfMessage').style.display = 'none';
     };
     INPUTS.forEach(i => el(i).addEventListener('input', () => renderResults(calc())));
 
