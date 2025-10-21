@@ -3,15 +3,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DDMRP Buffer Calculator</title>
+  <title>DDMRP Buffer Calculator — with Zone Tooltips</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root { color-scheme: light dark; }
     .number-input { appearance: textfield; background-color: #f8f9fa; }
-    .number-input::-webkit-outer-spin-button, .number-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .number-input::-webkit-outer-spin-button,
+    .number-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .calc-line { font-variant-numeric: tabular-nums; }
-    .chev { transition: transform .15s ease; }
-    .chev.open { transform: rotate(90deg); }
+
+    /* Tooltip bubble */
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      background: #111827;          /* gray-900 */
+      color: #fff;
+      font-size: .75rem;             /* text-xs */
+      line-height: 1rem;
+      padding: .35rem .5rem;
+      border-radius: .375rem;        /* rounded-md */
+      box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      opacity: 0;
+      transform: translate(-50%, -120%);
+      transition: opacity .08s ease;
+      white-space: nowrap;
+    }
+    .tooltip[data-show="true"] { opacity: 1; }
   </style>
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
@@ -141,14 +159,17 @@
     </details>
   </main>
 
+  <!-- Single tooltip node -->
+  <div id="tooltip" class="tooltip" role="tooltip" aria-hidden="true"></div>
+
   <script>
-    // Helpers
+    // --------- Helpers ---------
     const el  = id => document.getElementById(id);
     const fmt = n => isNaN(n) ? '—' : Math.round(n).toLocaleString();
     const num = n => Number.isFinite(n) ? (+n).toLocaleString(undefined, {maximumFractionDigits: 2}) : '—';
     const INPUTS = ['adu','dlt','varFactor','moq','orderCycle','onOrder','onHand','committed'];
 
-    // Lead Time Factor schedule
+    // Lead Time Factor schedule (simple heuristic)
     const leadTimeFactor = dlt => dlt<=5?0.8:dlt<=10?0.5:dlt<=20?0.35:0.2;
 
     const setVar = v => { el('varFactor').value = v; renderResults(calc()); };
@@ -242,30 +263,9 @@
       `;
 
       const cards = [
-        {
-          id: 'card-green',
-          label: 'Top of Green',
-          value: res.topGreen,
-          accent: 'text-green-600',
-          sub: `Chosen Green = ${fmt(res.green)} (${res.greenBound})`,
-          detailsHtml: greenDetails
-        },
-        {
-          id: 'card-yellow',
-          label: 'Top of Yellow',
-          value: res.topYellow,
-          accent: 'text-yellow-600',
-          sub: `Yellow = ${fmt(res.yellow)}; Red + Yellow = ${fmt(res.red)} + ${fmt(res.yellow)}`,
-          detailsHtml: yellowDetails
-        },
-        {
-          id: 'card-red',
-          label: 'Top of Red',
-          value: res.topRed,
-          accent: 'text-red-600',
-          sub: `Total Red = ${fmt(res.redBase)} + ${fmt(res.redSafety)}`,
-          detailsHtml: redDetails
-        }
+        { id:'card-green',  label:'Top of Green',  value:res.topGreen,  accent:'text-green-600',  sub:`Chosen Green = ${fmt(res.green)} (${res.greenBound})`, detailsHtml:greenDetails },
+        { id:'card-yellow', label:'Top of Yellow', value:res.topYellow, accent:'text-yellow-600', sub:`Yellow = ${fmt(res.yellow)}; Red + Yellow = ${fmt(res.red)} + ${fmt(res.yellow)}`, detailsHtml:yellowDetails },
+        { id:'card-red',    label:'Top of Red',    value:res.topRed,    accent:'text-red-600',    sub:`Total Red = ${fmt(res.redBase)} + ${fmt(res.redSafety)}`, detailsHtml:redDetails },
       ];
 
       // Render cards
@@ -303,8 +303,8 @@
         btn.addEventListener('click', ()=>{
           const nowHidden = target.classList.toggle('hidden');
           const open = !nowHidden;
-          if(open){ icon.classList.add('open'); label.textContent='Hide math'; }
-          else { icon.classList.remove('open'); label.textContent='Show math'; }
+          if(open){ icon.style.transform='rotate(90deg)'; label.textContent='Hide math'; }
+          else { icon.style.transform=''; label.textContent='Show math'; }
         });
       });
 
@@ -326,14 +326,13 @@
                                '#93c5fd';          // blue
     }
 
-    // Vertical stacked bar with blue zone when NF > top-of-green; 10% headroom in blue
+    // ---- Graph with tooltips on Red/Yellow/Green (NOT Blue) ----
     function renderViz({red, yellow, green, onHand, netFlow}){
       const v = el('viz');
       const topOfGreen = red + yellow + green;
       const overflowNF = Math.max(0, netFlow - topOfGreen);
-      const headroom   = overflowNF > 0 ? overflowNF * 0.10 : 0;
-
-      const total = Math.max(1, topOfGreen + overflowNF + headroom);
+      const headroom   = overflowNF > 0 ? overflowNF * 0.10 : 0;  // +10% when in blue
+      const total      = Math.max(1, topOfGreen + overflowNF + headroom);
 
       const pBlue   = ((overflowNF + headroom) / total) * 100;
       const pGreen  = (green / total) * 100;
@@ -343,12 +342,24 @@
       const nfPct = (netFlow / total) * 100;
       const ohPct = (onHand  / total) * 100;
 
+      // Build segment div helper with tooltip data
+      const seg = (hPct, color, tipText, enableTooltip=true) => {
+        if (hPct <= 0) return '';
+        const tooltipAttr = enableTooltip ? `data-tooltip="${tipText}"` : '';
+        return `<div class="zone-seg" ${tooltipAttr}
+                     style="height:${hPct}%;background:${color};"></div>`;
+      };
+
+      const tipRed    = `Red: ${fmt(red)}`;
+      const tipYellow = `Yellow: ${fmt(yellow)}`;
+      const tipGreen  = `Green: ${fmt(green)}`;
+
       v.innerHTML = `
         <div class="relative h-72 w-28 sm:w-32 border border-gray-300 rounded-lg overflow-hidden flex flex-col">
-          ${pBlue   > 0 ? `<div style="height:${pBlue}%;background:#93c5fd"></div>`   : ''}
-          ${pGreen  > 0 ? `<div style="height:${pGreen}%;background:#22c55e"></div>`  : ''}
-          ${pYellow > 0 ? `<div style="height:${pYellow}%;background:#f59e0b"></div>` : ''}
-          ${pRed    > 0 ? `<div style="height:${pRed}%;background:#ef4444"></div>`    : ''}
+          ${pBlue   > 0 ? seg(pBlue,   '#93c5fd', '', false) : ''}   <!-- Blue: NO tooltip -->
+          ${pGreen  > 0 ? seg(pGreen,  '#22c55e', tipGreen,  true) : ''}
+          ${pYellow > 0 ? seg(pYellow, '#f59e0b', tipYellow, true) : ''}
+          ${pRed    > 0 ? seg(pRed,    '#ef4444', tipRed,    true) : ''}
 
           ${Number.isFinite(netFlow) ? `
             <div class="absolute left-0 right-0" style="top:${Math.max(0, 100 - nfPct)}%">
@@ -362,6 +373,9 @@
               <div class="absolute left-full -translate-y-1/2 ml-1 bg-white text-xs px-1.5 py-0.5 rounded border">${fmt(onHand)}</div>
             </div>` : ''}
         </div>`;
+      
+      // Wire up tooltips for these newly-rendered segments
+      attachZoneTooltips();
     }
 
     // Advisory logic under Net Flow
@@ -387,27 +401,23 @@
       let html = '', tone = '', bg = '';
 
       if (netFlow > topGreen) {
-        // BLUE: overstocked; days until next reorder = (NF - topYellow) / ADU
         const days = Math.ceil((netFlow - topYellow) / adu);
         const dayLabel = days === 1 ? 'day' : 'days';
         tone = 'text-blue-800'; bg = 'bg-blue-50/60 border-blue-200';
         html = `<div class="font-semibold ${tone}">Overstocked</div>
                 <div class="mt-1">Estimated <span class="font-medium">${num(days)}</span> ${dayLabel} until next reorder.<br>(Net Flow − Top of Yellow) ÷ ADU</div>`;
       } else if (netFlow > topYellow) {
-        // GREEN: properly stocked; days until next reorder = (NF - topYellow) / ADU
         const days = Math.ceil((netFlow - topYellow) / adu);
         const dayLabel = days === 1 ? 'day' : 'days';
         tone = 'text-green-800'; bg = 'bg-green-50/60 border-green-200';
         html = `<div class="font-semibold ${tone}">Properly stocked</div>
                 <div class="mt-1">Estimated <span class="font-medium">${num(days)}</span> ${dayLabel} until next reorder.<br>(Net Flow − Top of Yellow) ÷ ADU</div>`;
       } else if (netFlow > topRed) {
-        // YELLOW: need another PO; amount = topGreen - netFlow
         const po = Math.max(0, topGreen - netFlow);
         tone = 'text-yellow-900'; bg = 'bg-yellow-50/60 border-yellow-200';
         html = `<div class="font-semibold ${tone}">Understocked</div>
                 <div class="mt-1">PO amount: <span class="font-medium">${fmt(po)}</span><br>Top of Green − Net Flow</div>`;
       } else {
-        // RED: very high priority; amount = topGreen - netFlow; stockout risk
         const po = Math.max(0, topGreen - netFlow);
         tone = 'text-red-900'; bg = 'bg-red-50/60 border-red-200';
         html = `<div class="font-semibold ${tone}">Very high priority</div>
@@ -416,6 +426,38 @@
 
       box.className = `mt-3 rounded-xl border p-3 text-sm ${bg}`;
       box.innerHTML = html;
+    }
+
+    // -------- Tooltip wiring (works on dynamically rendered segments) --------
+    function attachZoneTooltips(){
+      const tooltip = el('tooltip');
+      const zones = document.querySelectorAll('.zone-seg[data-tooltip]');
+      zones.forEach(z => {
+        z.addEventListener('pointerenter', e => {
+          const text = z.getAttribute('data-tooltip') || '';
+          if(!text){ tooltip.dataset.show = 'false'; return; }
+          tooltip.textContent = text;
+          tooltip.dataset.show = 'true';
+          tooltip.setAttribute('aria-hidden', 'false');
+        });
+        z.addEventListener('pointermove', e => {
+          // position near cursor, keep in viewport
+          const pad = 10;
+          let x = e.clientX;
+          let y = e.clientY - 12;
+          const rect = tooltip.getBoundingClientRect();
+          const vw = window.innerWidth, vh = window.innerHeight;
+          if (x + rect.width/2 + pad > vw) x = vw - rect.width/2 - pad;
+          if (x - rect.width/2 - pad < 0)  x = rect.width/2 + pad;
+          if (y - rect.height - pad < 0)   y = rect.height + pad + 12;
+          tooltip.style.left = x + 'px';
+          tooltip.style.top  = y + 'px';
+        });
+        z.addEventListener('pointerleave', () => {
+          tooltip.dataset.show = 'false';
+          tooltip.setAttribute('aria-hidden', 'true');
+        });
+      });
     }
 
     // Reset & listeners
