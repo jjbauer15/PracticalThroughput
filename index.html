@@ -5,77 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>DDMRP Buffer Calculator</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <meta name="description" content="Enter a few numbers to instantly size DDMRP buffers and see Top of Red/Yellow/Green.">
   <style>
     :root { color-scheme: light dark; }
     .number-input { appearance: textfield; background-color: #f8f9fa; }
-    .number-input::-webkit-outer-spin-button,
-    .number-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .tooltip {
-      position: fixed; z-index: 50; pointer-events: none;
-      transform: translate(-50%, -120%); white-space: nowrap;
-      padding: 0.25rem 0.5rem; font-size: 0.75rem;
-      border-radius: 0.375rem; background: rgba(17, 24, 39, 0.95);
-      color: white; box-shadow: 0 4px 10px rgba(0,0,0,.2);
-      display: none; transition: opacity 0.1s ease-in-out;
-    }
-    .subformula {
-      margin-left: 1rem;
-      padding-left: 0.75rem;
-      border-left: 2px solid #e5e7eb;
-      font-size: 0.9em;
-      color: #4b5563;
-    }
+    .number-input::-webkit-outer-spin-button, .number-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .calc-line { font-variant-numeric: tabular-nums; }
     .chev { transition: transform .15s ease; }
     .chev.open { transform: rotate(90deg); }
-    .calc-line { font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
   <header class="bg-white border-b border-gray-200">
-    <div class="mx-auto max-w-4xl px-4 py-6 flex items-center justify-between">
+    <div class="mx-auto max-w-5xl px-4 py-6 flex items-center justify-between">
       <h1 class="text-2xl font-semibold">DDMRP Buffer Calculator</h1>
     </div>
   </header>
 
-  <main class="mx-auto max-w-4xl px-4 py-6 grid gap-6">
-    <!-- Intro -->
-    <section class="bg-white rounded-2xl border border-gray-200 p-5">
-      <p class="text-gray-700 leading-relaxed">
-        Enter a few inputs to instantly calculate <span class="font-medium">Red / Yellow / Green</span> buffer zones. This tool runs entirely in your browser; 
-        <span class="font-medium">your entries never leave your device</span>.
-      </p>
-    </section>
-
-    <!-- Inputs -->
+  <main class="mx-auto max-w-5xl px-4 py-6 grid gap-6">
+    <!-- INPUTS -->
     <section class="bg-white rounded-2xl border border-gray-200 p-5">
       <h2 class="text-lg font-semibold mb-4">Inputs</h2>
 
-      <!-- Required Fields -->
       <div class="grid gap-4 sm:grid-cols-2">
         <label class="block">
-          <span class="text-sm text-gray-600">Average Daily Usage (ADU)<span class="text-rose-600">*</span></span>
-          <input id="adu" type="number" min="0" step="any"
-                 class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                 placeholder="e.g., 25" value="25" />
+          <span class="text-sm text-gray-600">Average Daily Usage (ADU)*</span>
+          <input id="adu" type="number" step="any" value="25"
+                 class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"/>
         </label>
 
         <label class="block">
-          <span class="text-sm text-gray-600">Supplier Lead Time (days)<span class="text-rose-600">*</span></span>
-          <input id="dlt" type="number" min="0" step="any"
-                 class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                 placeholder="e.g., 10" value="10" />
+          <span class="text-sm text-gray-600">Supplier Lead Time (days)*</span>
+          <input id="dlt" type="number" step="any" value="10"
+                 class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"/>
         </label>
 
-        <!-- Variability and LTF Row -->
         <div class="sm:col-span-2 grid sm:grid-cols-2 gap-4">
           <label class="block">
-            <span class="text-sm text-gray-600">Variability Factor (0–1)<span class="text-rose-600">*</span></span>
-            <div class="mt-1 flex items-center gap-3">
-              <input id="varFactor" type="number" min="0" max="1" step="0.05"
-                     class="number-input w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                     placeholder="e.g., 0.30" value="0.30" />
-            </div>
+            <span class="text-sm text-gray-600">Variability Factor (0–1)*</span>
+            <input id="varFactor" type="number" min="0" max="1" step="0.05" value="0.30"
+                   class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-500"/>
             <div class="mt-2 flex flex-wrap gap-2 text-xs">
               <button type="button" class="rounded-full border px-3 py-1 hover:bg-gray-50" onclick="setVar(0.15)">Low 0.15</button>
               <button type="button" class="rounded-full border px-3 py-1 hover:bg-gray-50" onclick="setVar(0.30)">Med 0.30</button>
@@ -92,237 +60,209 @@
         </div>
       </div>
 
-      <!-- Optional Fields (Collapsible) -->
       <details class="mt-6 rounded-xl border border-gray-200 open:bg-gray-50">
         <summary class="cursor-pointer font-semibold px-3 py-2">Optional Inputs</summary>
-        <div class="px-3 pb-4 pt-2">
-          <div class="grid gap-4 sm:grid-cols-2">
-            <label class="block">
-              <span class="text-sm text-gray-600">Minimum Order Quantity (MOQ), units</span>
-              <input id="moq" type="number" min="0" step="any"
-                     class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                     placeholder="Leave blank if none" />
-            </label>
+        <div class="px-3 pb-4 pt-2 grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="text-sm text-gray-600">Minimum Order Quantity (MOQ)</span>
+            <input id="moq" type="number" step="any"
+                   class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"/>
+          </label>
 
-            <label class="block">
-              <span class="text-sm text-gray-600">Imposed Order Frequency, days</span>
-              <input id="orderCycle" type="number" min="0" step="any"
-                     class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                     placeholder="e.g., 7 (orders every 7 days)" />
-              <div class="mt-1 text-xs text-gray-500">
-                If you only place orders every N days, Green must at least cover that cycle (ADU × N).
-              </div>
-            </label>
-          </div>
+          <label class="block">
+            <span class="text-sm text-gray-600">Imposed Order Frequency (days)</span>
+            <input id="orderCycle" type="number" step="any"
+                   class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"/>
+          </label>
+        </div>
+      </details>
+
+      <details class="mt-4 rounded-xl border border-gray-200 open:bg-gray-50">
+        <summary class="cursor-pointer font-semibold px-3 py-2">Current Supply (optional)</summary>
+        <div class="px-3 pb-4 pt-2 grid gap-4 sm:grid-cols-3">
+          <label><span class="text-sm text-gray-600">On-order</span>
+            <input id="onOrder" type="number" step="any"
+                   class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"/>
+          </label>
+          <label><span class="text-sm text-gray-600">On-hand</span>
+            <input id="onHand" type="number" step="any"
+                   class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"/>
+          </label>
+          <label><span class="text-sm text-gray-600">Committed</span>
+            <input id="committed" type="number" step="any"
+                   class="number-input mt-1 w-full rounded-xl border border-gray-300 px-3 py-2"/>
+          </label>
         </div>
       </details>
 
       <div class="mt-5">
-        <button id="resetBtn" class="rounded-xl bg-gray-100 px-4 py-2 font-medium text-gray-800 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">Reset</button>
+        <button id="resetBtn"
+                class="rounded-xl bg-gray-100 px-4 py-2 font-medium text-gray-800 hover:bg-gray-200 focus:ring-2 focus:ring-indigo-500">
+          Reset
+        </button>
       </div>
     </section>
 
-    <!-- Results -->
+    <!-- RESULTS -->
     <section class="bg-white rounded-2xl border border-gray-200 p-5">
       <h2 class="text-lg font-semibold mb-4">Results</h2>
-      <div class="grid gap-6 md:grid-cols-2 items-start">
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Zone cards + math -->
         <div id="results" class="grid gap-4"></div>
-        <div class="flex justify-center"><div id="viz"></div></div>
+
+        <!-- Viz + NF + Message -->
+        <div class="flex flex-col gap-3">
+          <div class="flex items-start gap-4">
+            <div class="relative">
+              <div id="viz"></div>
+            </div>
+            <div>
+              <div id="nfCard" class="rounded-xl border border-gray-200 p-4 w-56 transition-colors duration-300">
+                <div class="text-sm text-gray-700 font-medium">Net Flow Position</div>
+                <div id="nfValue" class="mt-1 text-2xl font-semibold text-gray-900">—</div>
+                <div id="nfDetail" class="mt-1 text-xs text-gray-700"></div>
+              </div>
+              <!-- NEW: Advisor box directly under Net Flow -->
+              <div id="nfMessage" class="mt-3 rounded-xl border border-gray-200 p-3 text-sm bg-gray-50 text-gray-800"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Formula Notes (moved below Results) -->
-    <details class="mt-1 rounded-2xl border border-gray-200 p-3 open:bg-gray-50">
+    <!-- NOTES -->
+    <details class="rounded-2xl border border-gray-200 p-3 open:bg-gray-50">
       <summary class="cursor-pointer font-medium">Formula notes</summary>
-      <ul class="mt-2 list-none pl-0 text-sm text-gray-700 space-y-2">
-        <!-- GREEN -->
-        <li><strong class="text-green-600">Green (Replenishment Zone)</strong></li>
-        <li class="subformula">Green Base = ADU × Lead Time × Lead Time Factor</li>
-        <li class="subformula">Green = max(Green Base, MOQ (if any), ADU × Order Frequency (if any))</li>
-        <li class="subformula">Top of Green (Replenishment Target) = Red + Yellow + Green</li>
-
-        <!-- YELLOW -->
-        <li class="mt-2"><strong class="text-yellow-600">Yellow (Demand Zone)</strong></li>
-        <li class="subformula">Yellow = ADU × Lead Time</li>
-        <li class="subformula">Top of Yellow (Replenishment Trigger) = Red + Yellow</li>
-
-        <!-- RED -->
-        <li class="mt-2"><strong class="text-red-600">Red (Safety Zone)</strong></li>
-        <li class="subformula">Total Red (Safety Zone) = Red Base + Red Safety</li>
-        <li class="subformula">Red Base = ADU × Lead Time × Lead Time Factor</li>
-        <li class="subformula">Red Safety = Red Base × Variability Factor</li>
-        <li class="subformula">Top of Red (Safety Stock) = Red</li>
+      <ul class="mt-2 text-sm text-gray-700 space-y-2">
+        <li><strong class="text-green-600">Green</strong>: ADU × LT × LTF (bounded by MOQ / order freq)</li>
+        <li><strong class="text-yellow-600">Yellow</strong>: ADU × LT</li>
+        <li><strong class="text-red-600">Red</strong>: (ADU × LT × LTF) + (RedBase × VarFactor)</li>
+        <li>Net Flow = On-hand + On-order − Committed</li>
       </ul>
     </details>
   </main>
 
-  <div id="tt" class="tooltip"></div>
-
   <script>
-    // ---------- Helpers ----------
-    const fmt = (n) => (n==null || isNaN(n)) ? '—' : Math.round(n).toLocaleString();
-    const el  = (id) => document.getElementById(id);
-    const INPUT_IDS = ['adu','dlt','varFactor','moq','orderCycle'];
+    // Helpers
+    const el  = id => document.getElementById(id);
+    const fmt = n => isNaN(n) ? '—' : Math.round(n).toLocaleString();
+    const num = n => Number.isFinite(n) ? (+n).toLocaleString(undefined, {maximumFractionDigits: 2}) : '—';
+    const INPUTS = ['adu','dlt','varFactor','moq','orderCycle','onOrder','onHand','committed'];
 
-    // Show precise values in math without messy trailing zeros
-    const f2 = (n) => {
-      if(n==null || isNaN(n)) return '—';
-      const s = (+n).toFixed(2);
-      return s.replace(/\.00$/,'').replace(/(\.\d*[1-9])0$/,'$1');
-    };
-    const multLine = (lhs, terms, result) => {
-      const parts = terms.map(f2).join(' × ');
-      return `<div class="calc-line">${lhs} = ${parts} = <span class="font-medium">${f2(result)}</span></div>`;
-    };
-    const addLine = (lhs, terms, result) => {
-      const parts = terms.map(f2).join(' + ');
-      return `<div class="calc-line">${lhs} = ${parts} = <span class="font-medium">${f2(result)}</span></div>`;
-    };
-    const maxLine = (lhs, options, chosen) => {
-      const parts = options.map(o => f2(o)).join(', ');
-      return `<div class="calc-line">${lhs} = max(${parts}) = <span class="font-medium">${f2(chosen)}</span></div>`;
-    };
+    // Lead Time Factor schedule
+    const leadTimeFactor = dlt => dlt<=5?0.8:dlt<=10?0.5:dlt<=20?0.35:0.2;
 
-    function setVar(v){ const vf=el('varFactor'); if(vf){vf.value=v; renderResults(calculate());}}
+    const setVar = v => { el('varFactor').value = v; renderResults(calc()); };
 
-    function readValues(){
-      const vals={};
-      INPUT_IDS.forEach(id=>{
-        const node=el(id); const v=node?parseFloat(node.value):NaN;
-        vals[id]=(isNaN(v)?null:v);
-      });
-      return vals;
-    }
+    function calc(){
+      const v = {}; INPUTS.forEach(i => v[i] = parseFloat(el(i).value));
+      const adu        = Number.isFinite(v.adu) ? v.adu : 0;
+      const dlt        = Number.isFinite(v.dlt) ? v.dlt : 0;
+      const varFactor  = Number.isFinite(v.varFactor) ? v.varFactor : 0;
+      const moq        = Number.isFinite(v.moq) ? v.moq : 0;
+      const orderCycle = Number.isFinite(v.orderCycle) ? v.orderCycle : 0;
+      const onOrder    = Number.isFinite(v.onOrder) ? v.onOrder : 0;
+      const onHand     = Number.isFinite(v.onHand) ? v.onHand : 0;
+      const committed  = Number.isFinite(v.committed) ? v.committed : 0;
 
-    function leadTimeFactor(dlt){
-      if(dlt==null||isNaN(dlt))return null;
-      if(dlt<=5)return 0.80;
-      if(dlt<=10)return 0.50;
-      if(dlt<=20)return 0.35;
-      return 0.20;
-    }
+      if(!adu || !dlt) return { error:'Missing required inputs', adu,dlt };
 
-    function calculate(){
-      const {adu,dlt,varFactor,moq,orderCycle}=readValues();
-      if([adu,dlt,varFactor].some(v=>v==null||v<0))
-        return {error:'Please fill in all required fields with valid numbers.'};
-      if(varFactor>1)return {error:'Variability must be between 0 and 1.'};
-
-      const ltf = leadTimeFactor(dlt);
+      const ltf    = leadTimeFactor(dlt);
       const yellow = adu * dlt;
 
-      const redBase = adu * dlt * (ltf ?? 0);
+      const redBase   = adu * dlt * ltf;
       const redSafety = redBase * varFactor;
-      const red = redBase + redSafety;
+      const red       = redBase + redSafety;
 
-      const greenBase = adu * dlt * (ltf ?? 0);
-      const hasMoq = (moq!=null && moq>0);
-      const hasOrderCycle = (orderCycle!=null && orderCycle>0);
-      const orderFloor = hasOrderCycle ? (adu * orderCycle) : null;
+      // Green bounded by MOQ and Order Frequency (ADU * orderCycle)
+      const greenBase  = adu * dlt * ltf;
+      const greenMoq   = moq > 0 ? moq : -Infinity;
+      const greenCycle = orderCycle > 0 ? adu * orderCycle : -Infinity;
+      const green      = Math.max(greenBase, greenMoq, greenCycle, 0);
 
-      let green = greenBase;
-      if(hasMoq) green = Math.max(green, moq);
-      if(hasOrderCycle) green = Math.max(green, orderFloor);
+      const moqBinding = green === greenMoq;
+      const ocBinding  = green === greenCycle;
+      const greenBound = moqBinding ? 'MOQ' : ocBinding ? 'Order Frequency' : 'Green Base';
 
-      const moqBinding = hasMoq && moq === green;
-      const ocBinding = hasOrderCycle && orderFloor === green;
-
-      const topRed = red;
+      const topRed    = red;
       const topYellow = red + yellow;
-      const topGreen = red + yellow + green;
+      const topGreen  = red + yellow + green;
+
+      const netFlow   = onHand + onOrder - committed;
 
       return {
-        adu,dlt,varFactor,moq,orderCycle,ltf,
-        yellow,redBase,redSafety,red,
-        greenBase,green,moqBinding,ocBinding,orderFloor,
-        topRed,topYellow,topGreen
+        adu,dlt,varFactor,ltf,
+        yellow,
+        redBase,redSafety,red,
+        greenBase, green, greenMoq, greenCycle, greenBound, moqBinding, ocBinding,
+        topRed,topYellow,topGreen,
+        onOrder,onHand,committed,netFlow
       };
     }
 
-    // Build the expandable details content for each card
-    function buildDetails(res){
-      const { adu, dlt, ltf, varFactor, moq, orderCycle,
-              yellow, redBase, redSafety, red,
-              greenBase, green, moqBinding, ocBinding, orderFloor,
-              topRed, topYellow, topGreen } = res;
-
-      // YELLOW math
-      const yellowMath = [
-        multLine('Yellow', [adu, dlt], yellow),
-        addLine('Top of Yellow', [red, yellow], topYellow)
-      ].join('');
-
-      // RED math
-      const redMath = [
-        multLine('Red Base', [adu, dlt, ltf??0], redBase),
-        multLine('Red Safety', [redBase, varFactor], redSafety),
-        addLine('Red', [redBase, redSafety], red),
-        `<div class="calc-line">Top of Red = Red = <span class="font-medium">${f2(topRed)}</span></div>`
-      ].join('');
-
-      // GREEN math + binding narrative
-      const greenPieces = [];
-      greenPieces.push(multLine('Green Base', [adu, dlt, ltf??0], greenBase));
-      const options = [greenBase];
-      if(moq!=null && moq>0) options.push(moq);
-      if(orderCycle!=null && orderCycle>0) options.push(orderFloor);
-
-      if(options.length>1){
-        greenPieces.push(maxLine('Green', options, green));
-        if(moqBinding){
-          greenPieces.push(`<div class="text-xs text-amber-700 mt-1">Bound by MOQ (${f2(moq)}).</div>`);
-        }else if(ocBinding){
-          greenPieces.push(`<div class="text-xs text-amber-700 mt-1">Bound by Order Frequency (ADU × ${f2(orderCycle)} = ${f2(orderFloor)}).</div>`);
-        }
-      }else{
-        greenPieces.push(`<div class="calc-line">Green = <span class="font-medium">${f2(green)}</span></div>`);
-      }
-      greenPieces.push(addLine('Top of Green', [red, yellow, green], topGreen));
-      const greenMath = greenPieces.join('');
-
-      return { yellowMath, redMath, greenMath };
-    }
-
     function renderResults(res){
-      const container=el('results');
-      if(!container)return;
-      container.innerHTML='';
-      if(res.error){container.innerHTML=`<div class='text-red-600'>${res.error}</div>`;return;}
+      const container = el('results');
+      if (res.error){
+        container.innerHTML = `<div class='text-red-600'>${res.error}. Enter ADU and Lead Time.</div>`;
+        el('ltFactorDisplay').textContent = '—';
+        el('viz').innerHTML = '';
+        el('nfValue').textContent = '—';
+        el('nfDetail').textContent = '';
+        el('nfCard').style.background = '#f3f4f6';
+        el('nfMessage').innerHTML = '';
+        return;
+      }
+      el('ltFactorDisplay').textContent = res.ltf.toFixed(2);
 
-      el('ltFactorDisplay').textContent=(res.ltf==null?'—':res.ltf.toFixed(2));
+      // Build details HTML for each card
+      const redDetails = `
+        <div class="calc-line"><span class="font-medium">Red Base</span> = ADU × LT × LTF = ${num(res.adu)} × ${num(res.dlt)} × ${num(res.ltf)} = <span class="font-medium">${num(res.redBase)}</span></div>
+        <div class="calc-line"><span class="font-medium">Red Safety</span> = Red Base × Var = ${num(res.redBase)} × ${num(res.varFactor)} = <span class="font-medium">${num(res.redSafety)}</span></div>
+        <div class="calc-line"><span class="font-medium">Total Red</span> = Red Base + Red Safety = ${num(res.redBase)} + ${num(res.redSafety)} = <span class="font-medium">${num(res.red)}</span></div>
+      `;
 
-      let greenSub = `Green from Base (=${fmt(res.greenBase)})`;
-      if(res.moqBinding) greenSub = `Green floored by MOQ ${fmt(res.moq)} (Base = ${fmt(res.greenBase)})`;
-      else if(res.ocBinding) greenSub = `Green floored by Order Freq ${fmt(res.orderFloor)} (ADU × ${res.orderCycle})`;
+      const yellowDetails = `
+        <div class="calc-line"><span class="font-medium">Yellow</span> = ADU × LT = ${num(res.adu)} × ${num(res.dlt)} = <span class="font-medium">${num(res.yellow)}</span></div>
+        <div class="calc-line"><span class="font-medium">Cumulative</span> = Red + Yellow = ${num(res.red)} + ${num(res.yellow)} = <span class="font-medium">${num(res.topYellow)}</span></div>
+      `;
 
-      const { greenMath, yellowMath, redMath } = buildDetails(res);
+      const greenDetails = `
+        <div class="calc-line"><span class="font-medium">Green Base</span> = ADU × LT × LTF = ${num(res.adu)} × ${num(res.dlt)} × ${num(res.ltf)} = <span class="font-medium">${num(res.greenBase)}</span></div>
+        ${Number.isFinite(res.greenMoq) && res.greenMoq !== -Infinity ? `<div class="calc-line"><span class="font-medium">MOQ bound</span> = ${num(res.greenMoq)}</div>` : ''}
+        ${Number.isFinite(res.greenCycle) && res.greenCycle !== -Infinity ? `<div class="calc-line"><span class="font-medium">Order Freq bound</span> = ADU × OrderCycle = ${num(res.adu)} × ${num(el('orderCycle').value || 0)} = <span class="font-medium">${num(res.greenCycle)}</span></div>` : ''}
+        <div class="calc-line"><span class="font-medium">Chosen Green</span> = max(Green Base${res.greenMoq!==-Infinity?', MOQ':''}${res.greenCycle!==-Infinity?', Order Freq':''}) = <span class="font-medium">${num(res.green)}</span> <span class="text-xs text-gray-500">(${res.greenBound})</span></div>
+        <div class="calc-line"><span class="font-medium">Cumulative</span> = Red + Yellow + Green = ${num(res.red)} + ${num(res.yellow)} + ${num(res.green)} = <span class="font-medium">${num(res.topGreen)}</span></div>
+      `;
 
-      const cards=[
+      const cards = [
         {
-          id:'card-green',
-          label:'Top of Green (Replenishment Target)',
-          value:res.topGreen,
-          sub:greenSub,
-          detailsHtml: greenMath,
-          accent:'text-green-600'
+          id: 'card-green',
+          label: 'Top of Green',
+          value: res.topGreen,
+          accent: 'text-green-600',
+          sub: `Chosen Green = ${fmt(res.green)} (${res.greenBound})`,
+          detailsHtml: greenDetails
         },
         {
-          id:'card-yellow',
-          label:'Top of Yellow (Replenishment Trigger)',
-          value:res.topYellow,
-          detailsHtml: yellowMath,
-          accent:'text-yellow-600'
+          id: 'card-yellow',
+          label: 'Top of Yellow',
+          value: res.topYellow,
+          accent: 'text-yellow-600',
+          sub: `Yellow = ${fmt(res.yellow)}; Red + Yellow = ${fmt(res.red)} + ${fmt(res.yellow)}`,
+          detailsHtml: yellowDetails
         },
         {
-          id:'card-red',
-          label:'Top of Red (Safety Stock)',
-          value:res.topRed,
-          sub:`Red = Red Base ${fmt(res.redBase)} + Red Safety ${fmt(res.redSafety)}`,
-          detailsHtml: redMath,
-          accent:'text-red-600'
+          id: 'card-red',
+          label: 'Top of Red',
+          value: res.topRed,
+          accent: 'text-red-600',
+          sub: `Total Red = ${fmt(res.redBase)} + ${fmt(res.redSafety)}`,
+          detailsHtml: redDetails
         }
       ];
 
+      // Render cards
+      container.innerHTML = '';
       cards.forEach(c=>{
         const card=document.createElement('div');
         card.className='rounded-xl border border-gray-200 p-4';
@@ -331,7 +271,7 @@
             <div>
               <div class='text-sm text-gray-500'>${c.label}</div>
               <div class='mt-1 text-2xl font-semibold ${c.accent??''}'>${fmt(c.value)}</div>
-              ${c.sub?`<div class='mt-1 text-xs ${res.moqBinding||res.ocBinding?'text-amber-700':'text-gray-500'}'>${c.sub}</div>`:''}
+              ${c.sub?`<div class='mt-1 text-xs text-gray-500'>${c.sub}</div>`:''}
             </div>
             <button class="mt-1 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
                     data-toggle="${c.id}">
@@ -347,69 +287,128 @@
         container.appendChild(card);
       });
 
-      // wire up toggles
+      // toggles
       container.querySelectorAll('[data-toggle]').forEach(btn=>{
         const targetId = btn.getAttribute('data-toggle');
         const target = el(targetId);
         const icon = btn.querySelector('.chev');
         const label = btn.querySelector('span');
         btn.addEventListener('click', ()=>{
-          const open = target.classList.toggle('hidden') === false;
+          const nowHidden = target.classList.toggle('hidden');
+          const open = !nowHidden;
           if(open){ icon.classList.add('open'); label.textContent='Hide math'; }
           else { icon.classList.remove('open'); label.textContent='Show math'; }
         });
       });
 
+      // NF card + viz + advisor
+      el('nfValue').textContent = fmt(res.netFlow);
+      el('nfDetail').textContent = `On-hand ${fmt(res.onHand)}, On-order ${fmt(res.onOrder)}, Committed ${fmt(res.committed)}`;
       renderViz(res);
+      colorNFCard(res);
+      renderAdvisor(res);
     }
 
-    function renderViz({red,yellow,green}){
-      const viz=el('viz'); if(!viz)return;
-      const total=(+red + +yellow + +green) || 1;
+    function colorNFCard({netFlow,topRed,topYellow,topGreen}){
+      const c = el('nfCard');
+      c.style.background =
+        !Number.isFinite(netFlow) || netFlow <= 0 ? '#f3f4f6' :
+        netFlow <= topRed    ? '#fecaca' :         // red
+        netFlow <= topYellow ? '#fde68a' :         // yellow
+        netFlow <= topGreen  ? '#bbf7d0' :         // green
+                               '#93c5fd';          // blue
+    }
 
-      viz.innerHTML=`
-        <div class="relative h-72 w-20 border border-gray-300 rounded-lg overflow-hidden flex flex-col-reverse">
-          <div id="seg-red" style="height:${(red/total*100)}%;background:#ef4444"></div>
-          <div id="seg-yellow" style="height:${(yellow/total*100)}%;background:#f59e0b"></div>
-          <div id="seg-green" style="height:${(green/total*100)}%;background:#22c55e"></div>
+    // Vertical stacked bar with blue zone when NF > top-of-green; 10% headroom in blue
+    function renderViz({red, yellow, green, onHand, netFlow}){
+      const v = el('viz');
+      const topOfGreen = red + yellow + green;
+      const overflowNF = Math.max(0, netFlow - topOfGreen);
+      const headroom   = overflowNF > 0 ? overflowNF * 0.10 : 0;
+
+      const total = Math.max(1, topOfGreen + overflowNF + headroom);
+
+      const pBlue   = ((overflowNF + headroom) / total) * 100;
+      const pGreen  = (green / total) * 100;
+      const pYellow = (yellow / total) * 100;
+      const pRed    = (red / total) * 100;
+
+      const nfPct = (netFlow / total) * 100;
+      const ohPct = (onHand  / total) * 100;
+
+      v.innerHTML = `
+        <div class="relative h-72 w-28 sm:w-32 border border-gray-300 rounded-lg overflow-hidden flex flex-col">
+          ${pBlue   > 0 ? `<div style="height:${pBlue}%;background:#93c5fd"></div>`   : ''}
+          ${pGreen  > 0 ? `<div style="height:${pGreen}%;background:#22c55e"></div>`  : ''}
+          ${pYellow > 0 ? `<div style="height:${pYellow}%;background:#f59e0b"></div>` : ''}
+          ${pRed    > 0 ? `<div style="height:${pRed}%;background:#ef4444"></div>`    : ''}
+
+          ${Number.isFinite(netFlow) ? `
+            <div class="absolute left-0 right-0" style="top:${Math.max(0, 100 - nfPct)}%">
+              <div class="h-0.5 bg-black"></div>
+              <div class="absolute left-full -translate-y-1/2 ml-1 bg-white text-xs px-1.5 py-0.5 rounded border">${fmt(netFlow)}</div>
+            </div>` : ''}
+
+          ${Number.isFinite(onHand) ? `
+            <div class="absolute left-0 right-0" style="top:${Math.max(0, 100 - ohPct)}%">
+              <div class="border-t border-dashed border-black/70"></div>
+              <div class="absolute left-full -translate-y-1/2 ml-1 bg-white text-xs px-1.5 py-0.5 rounded border">${fmt(onHand)}</div>
+            </div>` : ''}
         </div>`;
-
-      const tt = el('tt');
-      const attach = ({id,label,value})=>{
-        const n = document.getElementById(id);
-        if(!n) return;
-        const show = e => { tt.style.display='block'; tt.textContent = `${label}: ${fmt(value)}`; move(e); };
-        const hide = () => { tt.style.display='none'; };
-        const move = e => { tt.style.left = e.clientX+'px'; tt.style.top = e.clientY+'px'; };
-
-        n.addEventListener('mouseenter', show);
-        n.addEventListener('mousemove', move);
-        n.addEventListener('mouseleave', hide);
-
-        n.addEventListener('touchstart', (e)=>show(e.touches[0]), {passive:true});
-        n.addEventListener('touchmove',  (e)=>move(e.touches[0]), {passive:true});
-        n.addEventListener('touchend', hide);
-        n.addEventListener('touchcancel', hide);
-      };
-
-      attach({id:'seg-red',    label:'Red',    value:red});
-      attach({id:'seg-yellow', label:'Yellow', value:yellow});
-      attach({id:'seg-green',  label:'Green',  value:green});
     }
 
-    // Reset & live update
-    el('resetBtn').addEventListener('click',()=>{
-      ['adu','dlt','varFactor','moq','orderCycle'].forEach(id=>el(id).value='');
-      el('results').innerHTML=''; el('viz').innerHTML='';
-      el('ltFactorDisplay').textContent='—';
-    });
-    ['adu','dlt','varFactor','moq','orderCycle'].forEach(id=>{
-      const node=el(id);
-      if(node) node.addEventListener('input',()=>renderResults(calculate()));
-    });
+    // NEW: Advisory logic under Net Flow
+    function renderAdvisor({netFlow, topRed, topYellow, topGreen, adu}){
+      const box = el('nfMessage');
+      if (!adu || !Number.isFinite(netFlow)) { box.innerHTML = ''; return; }
 
-    // Initial render
-    renderResults(calculate());
+      let html = '', tone = '', bg = '';
+
+      if (netFlow > topGreen) {
+        // BLUE: overstocked; days until next reorder = (NF - topYellow) / ADU
+        const days = Math.ceil((netFlow - topYellow) / adu);
+        tone = 'text-blue-800'; bg = 'bg-blue-50/60 border-blue-200';
+        html = `<div class="font-semibold ${tone}">Overstocked</div>
+                <div class="mt-1">Estimated <span class="font-medium">${num(days)}</span> days until next reorder.<br>(Net Flow − Top of Yellow) ÷ ADU )</div>`;
+      } else if (netFlow > topYellow) {
+        // GREEN: properly stocked; days until next reorder = (topYellow - NF) / ADU
+        const days = Math.ceil((netFlow - topYellow) / adu);
+        tone = 'text-green-800'; bg = 'bg-green-50/60 border-green-200';
+        html = `<div class="font-semibold ${tone}">Properly stocked</div>
+                <div class="mt-1">Estimated <span class="font-medium">${num(days)}</span> days until next reorder.<br>(Net Flow − Top of Yellow) ÷ ADU )</div>`;
+      } else if (netFlow > topRed) {
+        // YELLOW: need another PO; amount = topGreen - netFlow
+        const po = Math.max(0, topGreen - netFlow);
+        tone = 'text-yellow-900'; bg = 'bg-yellow-50/60 border-yellow-200';
+        html = `<div class="font-semibold ${tone}">Understocked</div>
+                <div class="mt-1">PO amount: <span class="font-medium">${fmt(po)}</span><br>Top of Green − Net Flow.</div>`;
+      } else {
+        // RED: very high priority; amount = topGreen - netFlow; stockout risk
+        const po = Math.max(0, topGreen - netFlow);
+        tone = 'text-red-900'; bg = 'bg-red-50/60 border-red-200';
+        html = `<div class="font-semibold ${tone}">Very high priority</div>
+                <div class="mt-1">Place a PO for <span class="font-medium">${fmt(po)}</span><br>(Top of Green − Net Flow) <span class="font-medium"><br>Stockout risk</span> until replenished.</div>`;
+      }
+
+      box.className = `mt-3 rounded-xl border p-3 text-sm ${bg}`;
+      box.innerHTML = html;
+    }
+
+    // Reset & listeners
+    el('resetBtn').onclick = () => {
+      INPUTS.forEach(i => el(i).value = '');
+      el('results').innerHTML = '';
+      el('viz').innerHTML = '';
+      el('nfCard').style.background = '#f3f4f6';
+      el('nfValue').textContent = '—';
+      el('nfDetail').textContent = '';
+      el('ltFactorDisplay').textContent = '—';
+      el('nfMessage').innerHTML = '';
+    };
+    INPUTS.forEach(i => el(i).addEventListener('input', () => renderResults(calc())));
+
+    // initial render
+    renderResults(calc());
   </script>
 </body>
 </html>
